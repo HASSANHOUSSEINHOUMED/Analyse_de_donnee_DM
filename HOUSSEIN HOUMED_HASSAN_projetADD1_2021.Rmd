@@ -1,0 +1,115 @@
+---
+title: "Dévoir à la maison"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+Chargement de `library(tidyverse)` et importation des données:
+
+```{r, message = FALSE}
+library(tidyverse)
+datahas <- read_csv2( 
+  file = "C:\\Users\\hassa\\Documents\\DISQUE DUR D\\Université de Paris\\M1 IMB Semestre 1\\Analyse des données\\DM_2021.csv",
+  col_names = TRUE,na="NA")
+```
+Affichage des 10 premières lignes:
+```{r}
+print(datahas, width = Inf)
+```
+`Je remarque que mon base de donnée contient des valeurs manquantes connu dans R comme NA mais pour ne pas perdre des informations , je ne me debarasserais pas des valeurs manquantes dans la suite de mes analyses.`
+
+
+De plus, Je remarque que les variables `a`,`b`,`d when e = 1`,`d when e = 2`,`d when e = 3` et `d when e = NA`  contenant des numériques sont encodées comme des chaînes de caractères. Je force l'encodage en numériques:
+
+```{r}
+datahas <- datahas %>%
+  mutate(a = as.numeric(a),
+         b = as.numeric(b),
+         `d when e = 1` = as.numeric(`d when e = 1`),
+         `d when e = 2` = as.numeric(`d when e = 2`),
+         `d when e = 3` = as.numeric(`d when e = 3`),
+         `d when e = NA` = as.numeric(`d when e = NA`))
+datahas
+```
+
+J'ai constaté que  certains des noms de colonnes ne sont pas des noms de variables, mais des valeurs d'une variable. Les noms des colonnes `d when e = 1`, `d when e = 2`, `d when e = 3`, `d when e = NA` représentent les valeurs de la variable `e` et les valeurs dans ces colonnes représentent les valeurs de la variable `d`. J'ai donc utilisé la fonction `pivot_longer()` puisque mon problème courant etait un ensemble de données où certains des noms de colonnes ne sont pas des noms de variables, mais des valeurs d'une variable. 
+
+Et de plus, j'ai tout simplement modifier les valeurs de la variable `e` :
+
+
+```{r}
+datahas <- datahas %>% 
+  pivot_longer(c(`d when e = 1` , `d when e = 2`, `d when e = 3`, `d when e = NA`) , 
+               names_to = "e" , values_to = "d", names_prefix = "d when e = ") %>%
+  mutate(e = factor(e, levels = c(1, 2, 3, NA)))
+```
+
+J'ai ensuite classé mes variables en triant leurs noms par ordre alphabétique croissant.
+
+```{r}
+datahas <- datahas %>% 
+  relocate(a,b,c,d,e,f,g)
+```
+
+J'ai remplacé la modalité `no word` du variable `g` par `NA` pour lui faire connaitre comme une valeur manquante.
+
+```{r}
+datahas$g[datahas$g=="no word"] <- NA
+```
+
+J'ai remarqué que la variable `c` contient les nombres des mots et que la variable `g` est constitué des ces mots là.
+Donc je décidais d'extraire ces mots là.
+Comme ca j'aurais que la variable `c` qui contient les nombres des mots et la variables `g` contenant ces mots là.
+
+```{r}
+datahas$g <- datahas$g %>%
+  substring(regexpr("are", datahas$g) + 4)
+```
+Maintenant, je veux remplacer le `NA` qui se trouve dans la variable `g` par `no word` comme elle était au début.
+```{r}
+datahas$g[is.na(datahas$g)==TRUE] <- "no word"
+```
+
+Maintenant,je voudrais que chaque mot du variable `g` soit une observation donc d'abord je vais séparer les mots du variable `g`.
+Donc pour cela je veux essayer de trouver les nombres maximum des mots qu'on peut trouvé alors pour cela on va régardé la modalité maximum du variable `c`.
+
+```{r}
+ summary(datahas$c)
+```
+Donc le nombre maximum qu'on peut trouvé est 25 mots.
+Maintenant,on va séparer les mots qui se trouvent dans la variable `g`.
+
+```{r,warning=FALSE}
+datahas <- datahas %>%
+  separate(g,into=c("mot 1","mot 2" ,"mot 3","mot 4","mot 5","mot 6","mot 7","mot 8","mot 9","mot 10","mot 11","mot 12","mot 13","mot 14","mot 15","mot 16","mot 17","mot 18","mot 19","mot 20","mot 21","mot 22","mot 23","mot 24","mot 25"),sep=",")
+```
+En effet , les variables portant les noms de `mot 1 à 25` sont crées par moi juste pour stocker les mots dedans.
+
+
+```{r}
+datahas <- datahas %>%
+   pivot_longer(c("mot 1","mot 2" ,"mot 3","mot 4","mot 5","mot 6","mot 7","mot 8","mot 9","mot 10","mot 11","mot 12","mot 13","mot 14","mot 15","mot 16","mot 17","mot 18","mot 19","mot 20","mot 21","mot 22","mot 23","mot 24","mot 25") , names_to = "mots" , values_to = "Observations")
+```
+
+On voit très bien que la variable `Observations` contient des valeurs manquantes `NA` et d'ailleurs ces `NA` correspond aux mots qui n'existaient pas dans la variable `g` donc on peut se débarassé de ces valeurs manquantes 
+
+```{r}
+datahas <- datahas %>%
+  drop_na(Observations)
+```
+Et maintenant ,Je classe mes variables en triant leurs noms par ordre alphabétique croissant mais en mettant la variable `Observations` en premier.
+
+```{r}
+datahas <- datahas %>% 
+  relocate(Observations,a,b,c,d,e,f,mots)
+```
+
+Enfin, on a notre base de donnée en format tidy grace à l'univers tidyverse. Mais, on constate qu'ils y a des redondances au niveau de mon base de donnée , ce tout simplement à cause du commande `pivot_longer` qu'on a ces telles repetitions des valeurs Mais peu importe, à la fin j'ai obtenu ma base en format tidy en utilisant l'univers tidyverse.
+
+```{r}
+print(datahas, width = Inf)
+```
+
+
+
